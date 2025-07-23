@@ -7,7 +7,7 @@ data class HeapNode<S: Comparable<S>,T: Comparable<T>>(val age: S, var priority:
 
 
 
-class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
+class MultiDirectAccessMinHeap<S: Comparable<S>,T>(val minHeap: Boolean=true):
     MutableCollection<HeapNode<S,T>> where T : Comparable<T>, T : Number
 {
     private val heap = mutableListOf<HeapNode<S,T>>()
@@ -21,6 +21,9 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
         Comparator.reverseOrder()
     }
 
+    fun printNodes() {
+        println(heap.joinToString(separator = "\n") { it.toString() })
+    }
     override val size: Int
         get() = heap.size
 
@@ -38,7 +41,14 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
 
             override fun hasNext(): Boolean = !isEmpty()
 
-            override fun next(): HeapNode<S,T> = heap.first()
+            override fun next(): HeapNode<S,T> {
+                check((heap.first().priority==(if (minHeap) heap.minOf {it.priority} else heap.maxOf{it.priority}) )) {
+                    println("Heap failed")
+                    println("min=${heap.minOf {it.priority}}, max=${heap.maxOf{it.priority}}, type=$minHeap")
+                    println("firstvalue ${heap.first()}")
+                }
+                return heap.first()
+            }
 
             override fun remove() {
                 if (heap.isEmpty()) {
@@ -83,7 +93,7 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
         println("ageToIds: ${ageToIds.entries.joinToString { "${it.key} -> ${it.value}" }}")
         println("idToAge: ${idToAge.entries.joinToString { "${it.key} -> ${it.value}" }}")*/
         check(indexMap.size==ageToIds.values.sumOf { it.size }) {"Badd, inconsistent sizes: ${indexMap.size} ${ageToIds.values.sumOf { it.size }}"}
-
+        validate()
         return true
     }
 
@@ -94,19 +104,14 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
             return false
         }
         val min = heap.first()
-        val heapId = min.id
         val last = heap.removeAt(heap.lastIndex)
         //println("A")
        // println("O")
         indexMap.remove(min.id)
-        //println("M")
-        //println("remove: ${idToAge[min.id]!!}")
-        //println(ageToIds[idToAge[min.id]!!]!!.joinToString(", "))
+
         ageToIds[idToAge[min.id]!!]!!.remove(min.id)
-        //println(ageToIds[idToAge[min.id]!!]!!.joinToString(", "))
-        //println("B")
-        if (ageToIds[idToAge[heapId]!!]!!.isEmpty()) {
-            ageToIds.remove(key=idToAge[heapId]!!)
+        if (ageToIds[idToAge[min.id]!!]!!.isEmpty()) {
+            ageToIds.remove(key=idToAge[min.id]!!)
             //println("B1")
         }
         idToAge.remove(key= min.id)
@@ -118,27 +123,39 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
             siftDown(index=0)
         }
         check(indexMap.size==ageToIds.values.sumOf { it.size }) {"Aremove, inconsistent sizes: ${indexMap.size} ${ageToIds.values.sumOf { it.size }}"}
+        validate()
         return true
     }
 
     fun removeByAge(age: S): Boolean {
         //remove(T)
+        validate()
         val ids = ageToIds[age] ?: return false
+        //println("ids= ${ids.joinToString()}")
 
         ids.forEach { id ->
+            validate()
+            //println("heap:")
+            //println(heap.joinToString(separator = "\n"))
             //println("Removing id: $id with age: $age")
             //println("Removing id: $id, indexmap: ${indexMap.values.joinToString(", ")})")
             val index = indexMap[id]!! /*?: return false*/
             val last = heap.removeAt(heap.lastIndex)
-            indexMap.remove(id)
+            //println("last= $last")
+            indexMap.remove(key=id)
             if (index < heap.size) {
+                //println("Removing id: $id with index: $index")
                 heap[index] = last
                 indexMap[last.id] = index
+                siftUp(index)
                 siftDown(index)
             }
             idToAge.remove(key=id)
+            //println("id $id")
+            validate()
         }
-
+        ageToIds.remove(key=age)
+        validate()
         return true
     }
 
@@ -168,6 +185,7 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
                 return false // If any element fails to add, return false
             }
         }
+        validate()
         return true // All elements added successfully
     }
 
@@ -177,6 +195,7 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
                 if (!remove(element=e)) return false
             }
         }
+        validate()
         return true // All elements removed successfully
     }
 
@@ -204,9 +223,11 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
             //println("${ageToIds.firstKey()}, $age")
             //println("Removing age: ${ageToIds.firstKey()}, agetoIds size: ${ageToIds.size}")
             removeByAge(age=ageToIds.firstKey())
-            ageToIds.remove(key=ageToIds.firstKey())
+            validate()
+            //println("ok - ${ageToIds.firstKey()}")
         }
         check(indexMap.size==ageToIds.values.sumOf { it.size }) {"Aremove inconsistent sizes: ${indexMap.size} ${ageToIds.values.sumOf { it.size }}"}
+        validate()
         return true
 
     }
@@ -255,6 +276,13 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
             val left = 2 * i + 1
             val right = 2 * i + 2
             var smallest = i
+/*
+            if (left < size && heap[left].priority < heap[smallest].priority) {
+                smallest = left
+            }
+            if (right < size && heap[right].priority < heap[smallest].priority) {
+                smallest = right
+            }*/
 
             if (left < size &&
                 comparator.compare(heap[left].priority, heap[smallest].priority) < 0) {
@@ -264,10 +292,30 @@ class MultiDirectAccessMinHeap<S: Comparable<S>,T>(minHeap: Boolean=true):
                 comparator.compare(heap[right].priority, heap[smallest].priority) < 0) {
                 smallest = right
             }
-
+            //println("i=$i, left=$left, right=$right size=${heap.size}")
+            //println("i=$i smallest=${heap[smallest]}")
+            //if (left<heap.size) println("left=$left + smallest=${heap[left]}")
+            //if (right<heap.size) println("right=$right smallest=${heap[right]}")
             if (smallest == i) break
             swap(i, smallest)
             i = smallest
+        }
+    }
+
+    private fun validate() {
+        for (i in 0 until heap.size) {
+            val left = 2 * i + 1
+            val right = 2 * i + 2
+            if (left<heap.size) {
+
+                check(comparator.compare(heap[i].priority, heap[left].priority) < 0) {
+                    "Left child is greater than parent, parent=${heap[i]}, child=${heap[left]}"
+
+                }
+            }
+            if (right<heap.size) {
+                    check(comparator.compare(heap[i].priority, heap[right].priority) < 0) { "Right child is greater than parent" }
+            }
         }
     }
 

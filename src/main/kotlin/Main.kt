@@ -17,7 +17,8 @@ fun main() {
     //val gaussian0 = random.gaussian0()
     val gaussian1 = random.gaussian1()
     //val classgaussian = Classgaussian()
-    val v = List(100) {
+    val size=100
+    val v = List(size=size) {
         val t = it.toDouble() / 10
         //gaussian0()*4.0 -(t-5).pow(2)
         gaussian1.nextval() * 4.0 -(t-5).pow(2)
@@ -129,7 +130,7 @@ fun main() {
 
     //mySortedMap.putAll( v.mapIndexed { idx,it -> idx to it } )
 //val ages=listOf(44,39,47,45,45,29,90,43,68,41)
-    val ages=List(v.size) { random.nextInt(0, 100) }
+    val ages=List(v.size) { random.nextInt(0, size) }
 
     val heapNodes = v.mapIndexed { index,it ->
         HeapNode(id = index, priority = it, age= ages[index])
@@ -141,12 +142,19 @@ fun main() {
         myMultiHeap.add(it)
     }
 
-    myMultiHeap.removeSmallAges(45)
+    for (age in 0..<1) {
+        myMultiHeap.removeByAge(age)
+        println("Age: $age")
+    }
+    myMultiHeap.removeByAge(45)
+
+    println("--------------------------------")
+    myMultiHeap.printNodes()
    // val first=myMultiHeap.iterator().next()
 //println("First element: ${first.id}, priority: ${first.priority}, age: ${first.age}")
 println("MultiHeap size: ${myMultiHeap.size}")
-    repeat(myMultiHeap.size) {
-
+    for(i in 1..myMultiHeap.size) {
+print("$i")
             val minTask = myMultiHeap.iterator().next()
             myMultiHeap.remove(myMultiHeap.first())
            // println("Min task: $minTask")
@@ -155,16 +163,19 @@ println("MultiHeap size: ${myMultiHeap.size}")
 
 
 
+
     val lowerHeap = MultiDirectAccessMinHeap<Int, Double>(minHeap = true)
     val upperHeap = MultiDirectAccessMinHeap<Int, Double>(minHeap = false)
 
 
-    val w = 10
-    val runningMedian = List(size = 100) { i ->
-        println("i: $i")
-        lowerHeap.removeSmallAges(age = i - w)
-        upperHeap.removeSmallAges(age = i - w)
-        if (i + w < v.lastIndex) lowerHeap.add(HeapNode(id=i, age= i + w, priority = v[i]))
+
+    val w = 5
+    val runningMedian = List(size = size+2*w) { i ->
+        //println("i: $i")
+        lowerHeap.removeSmallAges(age = i - 2*w-1)
+        upperHeap.removeSmallAges(age = i - 2*w-1)
+
+        if (i>=0 && (i < v.lastIndex)) lowerHeap.add(HeapNode(id=i, age= i, priority = v[i]))
 
 
         while (lowerHeap.size > upperHeap.size) {
@@ -179,39 +190,44 @@ println("MultiHeap size: ${myMultiHeap.size}")
         }
 
         while (lowerHeap.size < upperHeap.size) {
-            val task = upperHeap.poll()
-            //upperHeap.remove(task)
-            //println("Task: $task")
-            task?.let {
+            upperHeap.poll()?.also {
                 lowerHeap.add(it)
             }
+
         }
 
-        var x = 0.0
-        var denominator = 0
-        try {
-            x += lowerHeap.first().priority
-            denominator++
-        } catch (e: Exception) {
-            0.0
-            println("Lower heap is empty")
+        var x = if (lowerHeap.size + upperHeap.size %2 == 1) { lowerHeap.first().priority }
+        else {
+            var temp = 0.0
+
+            var denominator = 0
+            try {
+                temp += lowerHeap.first().priority
+                println("lower heap: ${lowerHeap.first().priority}")
+                denominator++
+            } catch (e: Exception) {
+                println("Lower heap is empty")
+            }
+            try {
+                temp += upperHeap.first().priority
+                println("upper heap: ${upperHeap.first().priority}")
+                denominator++
+            } catch (e: Exception) {
+                println("Upper heap is empty")
+            }
+             temp /= denominator
+            temp
         }
-        try {
-            x += upperHeap.first().priority
-            denominator++
-        } catch (e: Exception) {
-            0.0
-            println("Upper heap is empty")
-        }
-        x /= denominator
+        println("size= ${lowerHeap.size+upperHeap.size}, i= $i, x= $x}")
         return@List x
-    }
+    }.slice(w..(size+w-1))
 
 
 
     val runningMedian2 = List(100) { it ->
         val sublist = v.slice(max(0,it-w)..min(99,it+w))
             .sorted()
+        println(sublist.size)
         return@List sublist[sublist.size / 2] // median
     }
     val plot = letsPlot(

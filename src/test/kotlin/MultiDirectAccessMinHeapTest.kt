@@ -59,7 +59,7 @@ class MultiDirectAccessMinHeapTest {
         heapNodes.forEach {
             myMultiHeap.add(it)
         }
-        val expected = heapNodes.filter { it.first>45 }.sortedBy { it.second }
+        val expected = heapNodes.filter { it.first>=45 }.sortedBy { it.second }
 
         myMultiHeap.removeSmallAges(45.0)
         val actual = mutableListOf<Triple<Double, Double,Long>>()

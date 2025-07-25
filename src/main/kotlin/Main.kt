@@ -92,21 +92,22 @@ fun main() {
     val heapNodes = v.mapIndexed { index, it ->
         Triple(first = ages[index], second = it, third = index.toLong())
     }
+    /*
     heapNodes.forEach {
         println(it)
-    }
+    }*/
     heapNodes.forEach {
         myMultiHeap.add(it)
     }
-
+/*
     for (age in 0..<1) {
         myMultiHeap.removeByAge(age.toDouble())
         println("Age: $age")
     }
-    myMultiHeap.removeByAge(45.0)
+    myMultiHeap.removeByAge(45.0)*/
 
     println("--------------------------------")
-    myMultiHeap.printNodes()
+  //  myMultiHeap.printNodes()
     // val first=myMultiHeap.iterator().next()
 //println("First element: ${first.id}, priority: ${first.priority}, age: ${first.age}")
     println("MultiHeap size: ${myMultiHeap.size}")

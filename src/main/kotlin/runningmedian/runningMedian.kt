@@ -14,8 +14,8 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
 
 
 
-    val lowerHeap = MultiDirectAccessMinHeap(minHeap = true)
-    val upperHeap = MultiDirectAccessMinHeap(minHeap = false)
+    val lowerHeap = MultiDirectAccessMinHeap(minHeap = false)
+    val upperHeap = MultiDirectAccessMinHeap(minHeap = true)
 
     val sortedDf:  DataFrame<RunningMedianInput> = df.sortBy { "AGE" and "ID" } /*as DataFrame<RunningMedianInput>*/
 
@@ -30,12 +30,23 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
                 third = "ID"<Long>(),
                 first = "AGE"<Double>(),
                 second = "VALUE"<Double>())
-            lowerHeap.add(myTriple)
+            if (lowerHeap.isEmpty()||upperHeap.isEmpty()|| myTriple.second<= lowerHeap.first().second)
+                lowerHeap.add(myTriple)
+            else {
+                upperHeap.add(myTriple)
+            }
         }
         val age: Double = (it.first()["AGE"] as Double)
 
         lowerHeap.removeSmallAges(age = age - 2*w)
         upperHeap.removeSmallAges(age = age - 2*w)
+/*
+        if (lowerHeap.size >0 && upperHeap.size >0) {
+            check(lowerHeap.first().second<= upperHeap.first().second) {
+                "Lower heap first: ${lowerHeap.first().second}, Upper heap first: ${upperHeap.first().second}"
+            }
+        }*/
+
         while (lowerHeap.size > upperHeap.size) {
             lowerHeap.poll()?.also {it2 ->
                 upperHeap.add(it2)
@@ -49,7 +60,7 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
             }?: break
         }
 
-        val x = if (lowerHeap.size + upperHeap.size %2 == 1) { lowerHeap.first().second }
+        val x = if ((lowerHeap.size + upperHeap.size) %2 == 1) { lowerHeap.first().second }
         else {
             var temp = 0.0
 
@@ -70,6 +81,14 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
             }
             temp /= denominator
             temp
+        }
+
+        if (age==4531+w) {
+            println("Task: $it, size: ${lowerHeap.size} ${upperHeap.size}")
+            lowerHeap.printNodes()
+            println("........")
+            upperHeap.printNodes()
+            println("age= ${age-w} Lower heap: ${lowerHeap.first().second}, Upper heap: ${upperHeap.first().second}")
         }
         runningMedianCol.add(Pair(age-w,x))
     }
@@ -94,8 +113,9 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
             }?: break
         }
 
-        val x = if (lowerHeap.size + upperHeap.size %2 == 1) { lowerHeap.first().second }
+        val x = if ((lowerHeap.size + upperHeap.size) %2 == 1) { lowerHeap.first().second }
         else {
+
             var temp = 0.0
 
             var denominator = 0

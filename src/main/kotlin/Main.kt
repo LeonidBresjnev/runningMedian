@@ -1,10 +1,24 @@
 package wasm.project.demo
 
+import org.jetbrains.kotlinx.dataframe.DataFrame
+import org.jetbrains.kotlinx.dataframe.api.add
+import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
+import org.jetbrains.kotlinx.dataframe.api.filter
+import org.jetbrains.kotlinx.dataframe.api.into
+import org.jetbrains.kotlinx.dataframe.api.map
+import org.jetbrains.kotlinx.dataframe.api.print
+import org.jetbrains.kotlinx.dataframe.api.rename
+import org.jetbrains.kotlinx.dataframe.api.select
+import org.jetbrains.kotlinx.dataframe.io.ColType
+import org.jetbrains.kotlinx.dataframe.io.readCSV
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.geom.geomPoint
 import org.jetbrains.letsPlot.letsPlot
-import kotlin.math.max
-import kotlin.math.min
+import wasm.project.demo.runningmedian.MultiDirectAccessMinHeap
+import wasm.project.demo.runningmedian.RunningMedianInput
+import wasm.project.demo.runningmedian.RunningMedianOutput
+import wasm.project.demo.runningmedian.runningMedian
+import java.io.File
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -13,15 +27,14 @@ import kotlin.random.Random
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 fun main() {
-    val random=Random(seed = 42)
-    //val gaussian0 = random.gaussian0()
+    val random = Random    //val gaussian0 = random.gaussian0()
     val gaussian1 = random.gaussian1()
     //val classgaussian = Classgaussian()
-    val size=100
-    val v = List(size=size) {
+    val size = 100
+    val v = List(size = size) {
         val t = it.toDouble() / 10
         //gaussian0()*4.0 -(t-5).pow(2)
-        gaussian1.nextval() * 4.0 -(t-5).pow(2)
+        gaussian1.nextval() * 4.0 - (t - 5).pow(2)
         //classgaussian.next()*4.0 -(t-5).pow(2)
     }
     val myHeap = DirectAccessMinHeap<Int, Double>(minHeap = true)
@@ -32,108 +45,52 @@ fun main() {
     v.forEachIndexed { index, it ->
         myHeap.add(Task(id = index, priority = it))
     }
-    //myHeap.remove()
-    /*
-    repeat(100) {
-        val firstkey=mySortedMap.firstKey()
-        val e= mySortedMap[firstkey]
-        println("$firstkey, $e")
-        mySortedMap.remove(firstkey)
-    }
-*/
-    /*
-    //myHeap.removeAllById((25..75).toList())
-    myHeap.removeSmallId(id = 50)
 
-
-    repeat(myHeap.size + 1) {
-        try {
-            val minTask = myHeap.iterator().next()
-            myHeap.remove(minTask)
-            println("Min task: ${minTask.id} with priority ${minTask.priority}")
-        } catch (e: Exception) {
-            println(e.message)
-        }
-    }
-
-
-    val lowerHeap = DirectAccessMinHeap<Int, Double>(minHeap = true)
-    val upperHeap = DirectAccessMinHeap<Int, Double>(minHeap = false)
-
-
-    val w = 10
-    val runningMedian = List(size = 100) { i ->
-        lowerHeap.removeSmallId(id = i - w)
-        upperHeap.removeSmallId(id = i - w)
-        if (i + w < v.lastIndex) lowerHeap.add(Task(id = i + w, priority = v[i + w]))
-        while (lowerHeap.size > upperHeap.size) {
-            val task = lowerHeap.poll()
-            task?.let {
-                lowerHeap.removeById(task.id)
-                upperHeap.add(it)
-            }
-        }
-        while (lowerHeap.size < upperHeap.size) {
-            val task = upperHeap.poll()
-            task?.let {
-                upperHeap.removeById(task.id)
-                lowerHeap.add(it)
-            }
-        }
-
-        println(
-            "Lower heap size: ${lowerHeap.size}, ${lowerHeap.first()}, Upper heap size: ${upperHeap.size}, ${
-                try {
-                    upperHeap.first()
-                } catch (e: Exception) {
-                    ""
-                }
-            }"
+    val rawDataFile = File("longitude.csv")
+    val realData = DataFrame.readCSV(
+        fileOrUrl = rawDataFile.path,
+        delimiter = ',',
+        colTypes = mapOf(
+            "COHORT" to ColType.Int,
+            "PERSON_ID" to ColType.String,
+            "VALUE_AS_NUMBER" to ColType.Double,
+            "AGE" to ColType.Double
         )
-        var x = 0.0
-        var denominator = 0
-        try {
-            x += lowerHeap.first().priority
-            denominator++
-        } catch (e: Exception) {
-            0.0
-        }
-        try {
-            x += upperHeap.first().priority
-            denominator++
-        } catch (e: Exception) {
-            0.0
-        }
-        x /= denominator
-        return@List x
-    }
+    ).filter { "COHORT"<Int>() == 0}
+        .select("VALUE_AS_NUMBER", "AGE")
+        .rename("VALUE_AS_NUMBER").into("VALUE")
+         .add("ID") { index() }
+         as DataFrame<RunningMedianInput>
+    realData.print (10)
 
+    val realRunningMedian: DataFrame<RunningMedianOutput>
+            = runningMedian(df = realData, w = 2*365.0) as DataFrame<RunningMedianOutput>
 
-    val plot = letsPlot(
+    val myMultiHeap = MultiDirectAccessMinHeap(minHeap = true)
+    //val mySortedMap =  sortedM sortedMapOf<Int, Double>()
+    val plot0 = letsPlot(
         data = mapOf<String, List<Number>>(
-            "x" to (0..99).toList(),
-            "y" to v
+
+            "x" to realRunningMedian.map { it -> it.get("AGE") as Double}.toList(),
+            "y" to realRunningMedian.map { it -> it.get("VALUE") as Double}.toList(),
         )
-    ) + geomPoint {
+    ) + geomPoint(data = mapOf(
+        "x" to realData.map { it -> it.get("AGE") as Double}.toList(),
+        "y" to realData.map { it -> it.get("VALUE") as Double}.toList())) {
         x = "x"
         y = "y"
     } + geomLine(color = "red") {
-        x = 0..99
-        y = runningMedian
+        x = "x"
+        y = "y"
     }
-    plot.show()
-*/
-
-    val myMultiHeap = MultiDirectAccessMinHeap<Int, Double>(minHeap = true)
-    //val mySortedMap =  sortedM sortedMapOf<Int, Double>()
-
+    plot0.show()
 
     //mySortedMap.putAll( v.mapIndexed { idx,it -> idx to it } )
 //val ages=listOf(44,39,47,45,45,29,90,43,68,41)
-    val ages=List(v.size) { random.nextInt(0, size) }
+    val ages = List(v.size) { random.nextInt(0, size).toDouble() }
 
-    val heapNodes = v.mapIndexed { index,it ->
-        HeapNode(id = index, priority = it, age= ages[index])
+    val heapNodes = v.mapIndexed { index, it ->
+        Triple(first = ages[index], second = it, third = index.toLong())
     }
     heapNodes.forEach {
         println(it)
@@ -143,39 +100,47 @@ fun main() {
     }
 
     for (age in 0..<1) {
-        myMultiHeap.removeByAge(age)
+        myMultiHeap.removeByAge(age.toDouble())
         println("Age: $age")
     }
-    myMultiHeap.removeByAge(45)
+    myMultiHeap.removeByAge(45.0)
 
     println("--------------------------------")
     myMultiHeap.printNodes()
-   // val first=myMultiHeap.iterator().next()
+    // val first=myMultiHeap.iterator().next()
 //println("First element: ${first.id}, priority: ${first.priority}, age: ${first.age}")
-println("MultiHeap size: ${myMultiHeap.size}")
-    for(i in 1..myMultiHeap.size) {
-print("$i")
-            val minTask = myMultiHeap.iterator().next()
-            myMultiHeap.remove(myMultiHeap.first())
-           // println("Min task: $minTask")
+    println("MultiHeap size: ${myMultiHeap.size}")
+    for (i in 1..myMultiHeap.size) {
+//print("$i")
+        val minTask = myMultiHeap.iterator().next()
+        myMultiHeap.remove(myMultiHeap.first())
+        // println("Min task: $minTask")
 
     }
 
+/*
+    val myDf: DataFrame<RunningMedianInput> = dataFrameOf(
+        "ID" to List(v.size) { it.toDouble() },
+        "VALUE" to v,
+        "AGE" to List(v.size) { it.toDouble() }) as DataFrame<RunningMedianInput>
+
+    val runningMedian: DataFrame<RunningMedianOutput>
+    = runningMedian(df = myDf, w = 10.0) as DataFrame<RunningMedianOutput>
+*/
+
+    //val runningMedianDf = runningMedian(sortedDf)
+    //println("Running median DataFrame: $runningMedianDf")
+/*
 
 
 
-    val lowerHeap = MultiDirectAccessMinHeap<Int, Double>(minHeap = true)
-    val upperHeap = MultiDirectAccessMinHeap<Int, Double>(minHeap = false)
-
-
-
-    val w = 5
+    val w = 10
     val runningMedian = List(size = size+2*w) { i ->
         //println("i: $i")
         lowerHeap.removeSmallAges(age = i - 2*w-1)
         upperHeap.removeSmallAges(age = i - 2*w-1)
 
-        if (i>=0 && (i < v.lastIndex)) lowerHeap.add(HeapNode(id=i, age= i, priority = v[i]))
+        if (i>=0 && (i < v.lastIndex)) lowerHeap.add(Triple(third = i, first = i, second = v[i]))
 
 
         while (lowerHeap.size > upperHeap.size) {
@@ -196,21 +161,21 @@ print("$i")
 
         }
 
-        var x = if (lowerHeap.size + upperHeap.size %2 == 1) { lowerHeap.first().priority }
+        var x = if (lowerHeap.size + upperHeap.size %2 == 1) { lowerHeap.first().second }
         else {
             var temp = 0.0
 
             var denominator = 0
             try {
-                temp += lowerHeap.first().priority
-                println("lower heap: ${lowerHeap.first().priority}")
+                temp += lowerHeap.first().second
+                println("lower heap: ${lowerHeap.first().second}")
                 denominator++
             } catch (e: Exception) {
                 println("Lower heap is empty")
             }
             try {
-                temp += upperHeap.first().priority
-                println("upper heap: ${upperHeap.first().priority}")
+                temp += upperHeap.first().second
+                println("upper heap: ${upperHeap.first().second}")
                 denominator++
             } catch (e: Exception) {
                 println("Upper heap is empty")
@@ -246,4 +211,27 @@ print("$i")
         y = runningMedian2
     }
     plot.show()
+*/
+
+/*
+    val plot = letsPlot(
+        data = mapOf<String, List<Number>>(
+
+            "x" to runningMedian.map { it -> it.get("AGE") as Double}.toList(),
+            "y" to runningMedian.map { it -> it.get("VALUE") as Double}.toList(),
+        )
+    ) + geomPoint(data = mapOf(
+        "x" to myDf.map { it -> it.get("AGE") as Double}.toList(),
+        "y" to myDf.map { it -> it.get("VALUE") as Double}.toList())) {
+        x = "x"
+        y = "y"
+    } + geomLine(color = "red") {
+        x = "x"
+        y = "y"
+    }
+    + geomLine(color = "green") {
+        x = 0..99
+        y = runningMedian2
+    }
+    plot.show()*/
 }

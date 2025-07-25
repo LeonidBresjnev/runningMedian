@@ -1,8 +1,7 @@
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import wasm.project.demo.HeapNode
-import wasm.project.demo.MultiDirectAccessMinHeap
+import wasm.project.demo.runningmedian.MultiDirectAccessMinHeap
 import wasm.project.demo.gaussian1
 import kotlin.math.pow
 import kotlin.random.Random
@@ -10,12 +9,15 @@ import kotlin.random.Random
 class MultiDirectAccessMinHeapTest {
     val random = Random(seed = 42)
     val gaussian1 = random.gaussian1()
-    val myMultiHeap = MultiDirectAccessMinHeap<Int, Double>(minHeap = true)
+    val myMultiHeap = MultiDirectAccessMinHeap(minHeap = true)
     val heapNodes = List(10) {
         val t = it.toDouble() / 10
         gaussian1.nextval() * 4.0 -(t-5).pow(2)
     }.mapIndexed { index,it ->
-        HeapNode(id = index, priority = it, age= random.nextInt(0, 100))
+        Triple(
+            third = index.toLong(),
+            second = it,
+            first= random.nextInt(0, 100).toDouble())
     }
 
 
@@ -38,8 +40,8 @@ class MultiDirectAccessMinHeapTest {
         heapNodes.forEach {
             myMultiHeap.add(it)
         }
-        val expected = heapNodes.sortedBy { it.priority }
-        val actual = mutableListOf<HeapNode<Int, Double>>()
+        val expected = heapNodes.sortedBy { it.second }
+        val actual = mutableListOf<Triple<Double, Double,Long>>()
         while (myMultiHeap.isNotEmpty()) {
 
             val minTask = myMultiHeap.iterator().next()
@@ -57,10 +59,10 @@ class MultiDirectAccessMinHeapTest {
         heapNodes.forEach {
             myMultiHeap.add(it)
         }
-        val expected = heapNodes.filter { it.age>45 }.sortedBy { it.priority }
+        val expected = heapNodes.filter { it.first>45 }.sortedBy { it.second }
 
-        myMultiHeap.removeSmallAges(45)
-        val actual = mutableListOf<HeapNode<Int, Double>>()
+        myMultiHeap.removeSmallAges(45.0)
+        val actual = mutableListOf<Triple<Double, Double,Long>>()
         while (myMultiHeap.isNotEmpty()) {
 
             val minTask = myMultiHeap.iterator().next()

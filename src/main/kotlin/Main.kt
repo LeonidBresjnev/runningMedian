@@ -14,11 +14,15 @@ import org.jetbrains.kotlinx.dataframe.io.readCSV
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.geom.geomPoint
 import org.jetbrains.letsPlot.letsPlot
+import wasm.project.demo.runningmedian.AGE
 import wasm.project.demo.runningmedian.MultiDirectAccessMinHeap
 import wasm.project.demo.runningmedian.RunningMedianInput
 import wasm.project.demo.runningmedian.RunningMedianOutput
+import wasm.project.demo.runningmedian.VALUE
 import wasm.project.demo.runningmedian.runningMedian
 import java.io.File
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -71,12 +75,12 @@ fun main() {
     val plot0 = letsPlot(
         data = mapOf<String, List<Number>>(
 
-            "x" to realRunningMedian.map { it -> it.get("AGE") as Double}.toList(),
-            "y" to realRunningMedian.map { it -> it.get("VALUE") as Double}.toList(),
+            "x" to realRunningMedian.AGE.toList(),
+            "y" to realRunningMedian.VALUE.toList(),
         )
     ) + geomPoint(data = mapOf(
-        "x" to realData.map { it -> it.get("AGE") as Double}.toList(),
-        "y" to realData.map { it -> it.get("VALUE") as Double}.toList())) {
+        "x" to realData.AGE.toList(),
+        "y" to realData.VALUE.toList())) {
         x = "x"
         y = "y"
     } + geomLine(color = "red") {
@@ -119,7 +123,7 @@ fun main() {
 
     }
 
-/*
+
     val myDf: DataFrame<RunningMedianInput> = dataFrameOf(
         "ID" to List(v.size) { it.toDouble() },
         "VALUE" to v,
@@ -127,7 +131,8 @@ fun main() {
 
     val runningMedian: DataFrame<RunningMedianOutput>
     = runningMedian(df = myDf, w = 10.0) as DataFrame<RunningMedianOutput>
-*/
+
+
 
     //val runningMedianDf = runningMedian(sortedDf)
     //println("Running median DataFrame: $runningMedianDf")
@@ -190,12 +195,7 @@ fun main() {
 
 
 
-    val runningMedian2 = List(100) { it ->
-        val sublist = v.slice(max(0,it-w)..min(99,it+w))
-            .sorted()
-        println(sublist.size)
-        return@List sublist[sublist.size / 2] // median
-    }
+
     val plot = letsPlot(
         data = mapOf<String, List<Number>>(
             "x" to (0..99).toList(),
@@ -214,25 +214,29 @@ fun main() {
     plot.show()
 */
 
-/*
+    val runningMedian2 = List(100) { it ->
+        val sublist = v.slice(max(0,it-10)..min(99,it+10))
+            .sorted()
+        println(sublist.size)
+        return@List sublist[sublist.size / 2] // median
+    }
     val plot = letsPlot(
         data = mapOf<String, List<Number>>(
 
-            "x" to runningMedian.map { it -> it.get("AGE") as Double}.toList(),
-            "y" to runningMedian.map { it -> it.get("VALUE") as Double}.toList(),
+            "x" to runningMedian.map { AGE }.toList(),
+            "y" to runningMedian.map { VALUE }.toList(),
         )
     ) + geomPoint(data = mapOf(
-        "x" to myDf.map { it -> it.get("AGE") as Double}.toList(),
-        "y" to myDf.map { it -> it.get("VALUE") as Double}.toList())) {
+        "x" to myDf.map { AGE }.toList(),
+        "y" to myDf.map { VALUE }.toList())) {
         x = "x"
         y = "y"
     } + geomLine(color = "red") {
         x = "x"
         y = "y"
-    }
-    + geomLine(color = "green") {
+    } + geomLine(color = "green") {
         x = 0..99
         y = runningMedian2
     }
-    plot.show()*/
+    plot.show()
 }

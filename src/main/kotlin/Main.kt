@@ -1,31 +1,16 @@
 package wasm.project.demo
 
 import org.jetbrains.kotlinx.dataframe.DataFrame
-import org.jetbrains.kotlinx.dataframe.api.add
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
-import org.jetbrains.kotlinx.dataframe.api.filter
-import org.jetbrains.kotlinx.dataframe.api.into
 import org.jetbrains.kotlinx.dataframe.api.map
-import org.jetbrains.kotlinx.dataframe.api.print
-import org.jetbrains.kotlinx.dataframe.api.rename
-import org.jetbrains.kotlinx.dataframe.api.select
-import org.jetbrains.kotlinx.dataframe.io.ColType
-import org.jetbrains.kotlinx.dataframe.io.readCSV
 import org.jetbrains.letsPlot.geom.geomLine
 import org.jetbrains.letsPlot.geom.geomPoint
 import org.jetbrains.letsPlot.letsPlot
-import wasm.project.demo.runningmedian.AGE
-import wasm.project.demo.runningmedian.MultiDirectAccessMinHeap
-import wasm.project.demo.runningmedian.RunningMedianInput
-import wasm.project.demo.runningmedian.RunningMedianOutput
-import wasm.project.demo.runningmedian.VALUE
-import wasm.project.demo.runningmedian.runningMedian
-import java.io.File
+import wasm.project.demo.runningmedian.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
-
 
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -49,7 +34,7 @@ fun main() {
     v.forEachIndexed { index, it ->
         myHeap.add(Task(id = index, priority = it))
     }
-
+/*
     val rawDataFile = File("longitude.csv")
     val realData = DataFrame.readCSV(
         fileOrUrl = rawDataFile.path,
@@ -87,22 +72,16 @@ fun main() {
         x = "x"
         y = "y"
     }
-    plot0.show()
+    plot0.show()*/
 
     //mySortedMap.putAll( v.mapIndexed { idx,it -> idx to it } )
 //val ages=listOf(44,39,47,45,45,29,90,43,68,41)
     val ages = List(v.size) { random.nextInt(0, size).toDouble() }
 
-    val heapNodes = v.mapIndexed { index, it ->
-        Triple(first = ages[index], second = it, third = index.toLong())
-    }
     /*
     heapNodes.forEach {
         println(it)
     }*/
-    heapNodes.forEach {
-        myMultiHeap.add(it)
-    }
 /*
     for (age in 0..<1) {
         myMultiHeap.removeByAge(age.toDouble())
@@ -114,14 +93,7 @@ fun main() {
   //  myMultiHeap.printNodes()
     // val first=myMultiHeap.iterator().next()
 //println("First element: ${first.id}, priority: ${first.priority}, age: ${first.age}")
-    println("MultiHeap size: ${myMultiHeap.size}")
-    for (i in 1..myMultiHeap.size) {
-//print("$i")
-        val minTask = myMultiHeap.iterator().next()
-        myMultiHeap.remove(myMultiHeap.first())
-        // println("Min task: $minTask")
 
-    }
 
 
     val myDf: DataFrame<RunningMedianInput> = dataFrameOf(

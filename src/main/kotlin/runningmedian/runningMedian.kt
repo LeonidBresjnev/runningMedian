@@ -69,14 +69,14 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
                 //println("lower heap: ${lowerHeap.first().second}")
                 denominator++
             } catch (e: Exception) {
-                println("Lower heap is empty")
+                println("Lower heap is empty, ${e.message}")
             }
             try {
                 temp += upperHeap.first().second
                 //println("upper heap: ${upperHeap.first().second}")
                 denominator++
             } catch (e: Exception) {
-                println("Upper heap is empty")
+                println("Upper heap is empty, ${e.message}")
             }
             temp /= denominator
             temp
@@ -121,13 +121,13 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
                 temp += lowerHeap.first().second
                 denominator++
             } catch (e: Exception) {
-                println("Lower heap is empty")
+                println("Lower heap is empty, ${e.message}")
             }
             try {
                 temp += upperHeap.first().second
                 denominator++
             } catch (e: Exception) {
-                println("Upper heap is empty")
+                println("Upper heap is empty, ${e.message}")
             }
             temp /= denominator
             temp

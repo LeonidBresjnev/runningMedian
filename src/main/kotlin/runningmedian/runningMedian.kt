@@ -5,10 +5,8 @@ import org.jetbrains.kotlinx.dataframe.api.*
 
 fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<RunningMedianOutput> {
 
-
-
-    val lowerHeap = MultiDirectAccessMinHeap(minHeap = false)
-    val upperHeap = MultiDirectAccessMinHeap(minHeap = true)
+    val lowerHeap: MultiDirectAccessMinHeap = MultiDirectAccessMinHeapimpl(minHeap = false)
+    val upperHeap: MultiDirectAccessMinHeap = MultiDirectAccessMinHeapimpl(minHeap = true)
 
     val sortedDf:  DataFrame<RunningMedianInput> = df.sortBy { AGE and ID } /*as DataFrame<RunningMedianInput>*/
 
@@ -26,7 +24,7 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
         groupedByAge.groups.forEach { it ->
         it.forEach { row ->
             val myTriple = Triple(
-                third = "ID"<Long>(),
+                third =  "ID"<Long>(),
                 first = "AGE"<Double>(),
                 second = "VALUE"<Double>())
             if (lowerHeap.isEmpty()||upperHeap.isEmpty()|| myTriple.second<= lowerHeap.first().second)
@@ -93,7 +91,7 @@ fun runningMedian(df: DataFrame<RunningMedianInput>, w: Double): DataFrame<Runni
     val maxage= groupedByAge.groups.maxOfOrNull { it.first()["AGE"] as Double } ?: 0.0
     val minage= groupedByAge.groups.minOfOrNull { it.first()["AGE"] as Double } ?: 0.0
 
-    groupedByAge.groups.filter { it.first()["AGE"] as Double >  maxage-w}.forEach { it ->
+    groupedByAge.groups.filter { it.first()["AGE"] as Double >  maxage-w}.forEach {
         val age: Double = (it.first()["AGE"] as Double)
 
         lowerHeap.removeSmallAges(age = age - w)
@@ -139,7 +137,7 @@ is not not used because append is not inplace
             x,age
         )*/
     }
-    runningMedianCol.removeIf { it.first<minage || it.first>maxage }
+    runningMedianCol.removeIf { it.first !in minage..maxage }
     val runningMedianDF: DataFrame<RunningMedianOutput> = dataFrameOf(
         "AGE" to runningMedianCol.map { it.first }.toList(),
         "VALUE" to runningMedianCol.map { it.second }.toList()

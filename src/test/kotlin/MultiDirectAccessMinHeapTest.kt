@@ -1,15 +1,16 @@
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import wasm.project.demo.runningmedian.MultiDirectAccessMinHeap
+import wasm.project.demo.runningmedian.MultiDirectAccessMinHeapimpl
 import wasm.project.demo.gaussian1
+import wasm.project.demo.runningmedian.MultiDirectAccessMinHeap
 import kotlin.math.pow
 import kotlin.random.Random
 
 class MultiDirectAccessMinHeapTest {
     val random = Random(seed = 42)
     val gaussian1 = random.gaussian1()
-    val myMultiHeap = MultiDirectAccessMinHeap(minHeap = true)
+    val myMultiHeap: MultiDirectAccessMinHeap = MultiDirectAccessMinHeapimpl(minHeap = true)
     val heapNodes = List(10) {
         val t = it.toDouble() / 10
         gaussian1.nextval() * 4.0 -(t-5).pow(2)
